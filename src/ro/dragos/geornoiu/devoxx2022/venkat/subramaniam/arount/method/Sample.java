@@ -72,11 +72,11 @@ class AroundResource {
   }
 
   public static void use(Consumer<AroundResource> consumer) {
-    AroundResource resource = new AroundResource(); //before
+    AroundResource resource = new AroundResource(); // before
     try {
       consumer.accept(resource);
     } finally {
-      resource.close(); //after
+      resource.close(); // after
     }
   }
 }

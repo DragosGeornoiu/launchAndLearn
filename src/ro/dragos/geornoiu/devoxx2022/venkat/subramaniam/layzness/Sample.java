@@ -27,7 +27,7 @@ public class Sample {
   }
 
   public static void main(String[] args) {
-//    int value = 4;
+    //    int value = 4;
 
     // in this case, because we have an && between the operations, the first part of the if is
     // evaluated and the compute method is never called
@@ -40,14 +40,14 @@ public class Sample {
 
     // because the method is called explicitly outside the if, now the compute method will actually
     // be called
-//    int temp = compute(value);
-//    if (value > 4 && temp > 100) {
-//      System.out.println("path 1");
-//    } else {
-//      System.out.println("path 2");
-//    }
+    //    int temp = compute(value);
+    //    if (value > 4 && temp > 100) {
+    //      System.out.println("path 1");
+    //    } else {
+    //      System.out.println("path 2");
+    //    }
 
-    //using Lazy class
+    // using Lazy class
     int value = 4;
     Lazy<Integer> temp = new Lazy<>(() -> compute(value));
     if (value > 4 && temp.get() > 100) {

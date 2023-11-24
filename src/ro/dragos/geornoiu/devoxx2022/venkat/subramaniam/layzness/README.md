@@ -12,7 +12,6 @@ once in the appropriate implementation
 
 David wheeler: In CS we can solve almost any problem by introducing one more level of indirection.
 
-In procedural code, pointers give the power of indirection.
-In OO code, overriding functions give the power of indirection.
-In FP code, lambdas give the power of indirection.
+In procedural code, pointers give the power of indirection. In OO code, overriding functions give the power of
+indirection. In FP code, lambdas give the power of indirection.
 
