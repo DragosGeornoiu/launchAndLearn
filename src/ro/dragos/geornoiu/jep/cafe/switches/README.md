@@ -1,6 +1,7 @@
-`# Switch expressions
+# Switch expressions
 
 URL: https://www.youtube.com/watch?v=652kheEraHQ&list=PLX8CzqL3ArzV4BpOzLanxd4bZr46x5e87&index=20
+
 JEP 361
 
 Up until JEP 361 we had "switch statements" in Java and what this JEP brings are "switch expressions".

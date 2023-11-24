@@ -1,6 +1,7 @@
 # Sealed classes
 
 URL: https://www.youtube.com/watch?v=652kheEraHQ&list=PLX8CzqL3ArzV4BpOzLanxd4bZr46x5e87&index=20
+
 JEP 409
 
 Sealed classes cover concrete classes, abstract classes and interfaces.
