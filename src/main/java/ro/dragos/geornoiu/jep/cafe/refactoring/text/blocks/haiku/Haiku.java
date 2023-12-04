@@ -1,23 +1,29 @@
 package ro.dragos.geornoiu.jep.cafe.refactoring.text.blocks.haiku;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import org.eclipse.collections.api.bag.primitive.CharBag;
+import org.eclipse.collections.api.bag.primitive.MutableCharBag;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.set.primitive.MutableCharSet;
 import org.eclipse.collections.api.tuple.primitive.CharIntPair;
 import org.eclipse.collections.impl.factory.Strings;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -45,7 +51,7 @@ public class Haiku {
             """;
 
 
-//    @Benchmark //uncomment this if you want to be added in comparison
+    //    @Benchmark //1 uncomment this if you want to be added in comparison
     public Object distinct_letters_EC() {
         String distinctLetters = Strings.asChars(this.haiku)
                 .select(Character::isAlphabetic)
@@ -56,7 +62,7 @@ public class Haiku {
         return distinctLetters;
     }
 
-    //    @Benchmark //uncomment this if you want to be added in comparison
+    //    @Benchmark //1 uncomment this if you want to be added in comparison
     public Object distinct_letters_Java17() {
         String distinctLetters = this.haiku.chars()
                 .filter(Character::isAlphabetic)
@@ -68,7 +74,7 @@ public class Haiku {
         return distinctLetters;
     }
 
-    @Benchmark
+    //    @Benchmark //2 uncomment this if you want to be added in comparison
     public Object top_letters_EC() {
         CharBag chars = Strings.asChars(this.haiku)
                 .select(Character::isAlphabetic)
@@ -79,7 +85,7 @@ public class Haiku {
         return top3;
     }
 
-    @Benchmark
+    //    @Benchmark //2 uncomment this if you want to be added in comparison
     public Object top_letters_Java17_V1() {
         Map<String, Long> chars = this.haiku.chars()
                 .filter(Character::isAlphabetic)
@@ -110,7 +116,7 @@ public class Haiku {
         return mostSeenLetters;
     }
 
-    @Benchmark
+    //    @Benchmark //2 uncomment this if you want to be added in comparison
     public Object top_letters_Java17_V2() {
         Map<String, Long> chars = this.haiku.chars()
                 .filter(Character::isAlphabetic)
@@ -137,7 +143,7 @@ public class Haiku {
         return mostSeenLetters;
     }
 
-    @Benchmark
+    //    @Benchmark //2 uncomment this if you want to be added in comparison
     public Object top_letters_Java17_V3_record() {
         record Letter (int codepoint) {
             Letter(int codepoint) {
@@ -193,6 +199,143 @@ public class Haiku {
 
 
         return mostSeenLetters;
+    }
+
+    @Benchmark //3 uncomment this if you want to be added in comparison
+    public Object duplicate_and_unique_EC() {
+        MutableCharBag chars = Strings.asChars(this.haiku)
+                .select(Character::isAlphabetic)
+                .collectChar(Character::toLowerCase)
+                .toBag();
+
+            CharBag duplicates = chars.selectDuplicates();
+            MutableCharSet unique = chars.selectUnique();
+
+            return List.of(duplicates, unique);
+    }
+
+    @Benchmark //3 uncomment this if you want to be added in comparison
+    public Object duplicate_and_unique_Java17() {
+        record Letter (int codepoint) {
+            Letter(int codepoint) {
+                //this was added from the previous record with same name
+                if(!Character.isAlphabetic(codepoint)) {
+                    throw new IllegalArgumentException("Letter is build on letters");
+                }
+                this.codepoint = Character.toLowerCase(codepoint);
+            }
+        }
+
+        record LetterCount(long count) implements Comparable<LetterCount> {
+            @Override
+            public int compareTo(LetterCount o) {
+                return Long.compare(this.count, o.count);
+            }
+
+            //this was added from the previous record with same name
+            static Collector<Letter, Object, LetterCount> counting() {
+                return Collectors.collectingAndThen(Collectors.counting(), LetterCount::new);
+            }
+        }
+
+        record LetterByCount(Letter letter, LetterCount count) {
+            LetterByCount(Map.Entry<Letter, LetterCount> entry) {
+                this(entry.getKey(), entry.getValue());
+            }
+
+            public boolean isUnique() {
+                return count.count() == 1L;
+            }
+
+            public boolean isNotUnique() {
+                return count.count() > 1L;
+            }
+        }
+
+        Map<Letter, LetterCount> lettersByNumber = this.haiku.chars()
+            .filter(Character::isAlphabetic)
+            .mapToObj(Letter::new)
+            .collect(
+                Collectors.groupingBy(
+                    Function.identity(),
+                    LetterCount.counting())
+            );
+
+        Set<Letter> duplicates = lettersByNumber.entrySet().stream()
+            .map(LetterByCount::new)
+            .filter(LetterByCount::isNotUnique)
+            .map(LetterByCount::letter)
+            .collect(Collectors.toSet());
+
+        Set<Letter> unique = lettersByNumber.entrySet().stream()
+            .map(LetterByCount::new)
+            .filter(LetterByCount::isUnique)
+            .map(LetterByCount::letter)
+            .collect(Collectors.toSet());
+
+        return List.of(duplicates, unique);
+    }
+
+    @Benchmark //3 uncomment this if you want to be added in comparison
+    public Object duplicate_and_unique_Java17_more_efficient_by_partitioning() {
+        record Letter (int codepoint) {
+            Letter(int codepoint) {
+                //this was added from the previous record with same name
+                if(!Character.isAlphabetic(codepoint)) {
+                    throw new IllegalArgumentException("Letter is build on letters");
+                }
+                this.codepoint = Character.toLowerCase(codepoint);
+            }
+        }
+
+        record LetterCount(long count) implements Comparable<LetterCount> {
+            @Override
+            public int compareTo(LetterCount o) {
+                return Long.compare(this.count, o.count);
+            }
+
+            //this was added from the previous record with same name
+            static Collector<Letter, Object, LetterCount> counting() {
+                return Collectors.collectingAndThen(Collectors.counting(), LetterCount::new);
+            }
+        }
+
+        record LetterByCount(Letter letter, LetterCount count) {
+            LetterByCount(Map.Entry<Letter, LetterCount> entry) {
+                this(entry.getKey(), entry.getValue());
+            }
+
+            public boolean isUnique() {
+                return count.count() == 1L;
+            }
+
+            public boolean isNotUnique() {
+                return count.count() > 1L;
+            }
+        }
+
+        Map<Letter, LetterCount> lettersByNumber = this.haiku.chars()
+            .filter(Character::isAlphabetic)
+            .mapToObj(Letter::new)
+            .collect(Collectors.groupingBy(
+                Function.identity(),
+                LetterCount.counting())
+            );
+
+
+        Map<Boolean, List<Letter>> partition = lettersByNumber.entrySet().stream()
+            .map(LetterByCount::new)
+            .collect(Collectors.partitioningBy(
+                LetterByCount::isUnique,
+                Collectors.mapping(LetterByCount::letter,
+                    Collectors.toList())
+                )
+            );
+
+        List<Letter> duplicates = partition.get(true);
+        List<Letter> unique = partition.get(false);
+
+        return List.of(duplicates, unique);
     }
 
     public static void main(String[] args) throws RunnerException {
